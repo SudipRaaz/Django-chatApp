@@ -15,9 +15,12 @@ class UserCreate(generics.CreateAPIView):
 
 @api_view(['POST'])
 def create_superuser(request):
-    serializer = UserSerializer(data=request.data)
+    data = request.data.copy()
+    # data['is_staff'] = request.data['is_staff']
+    # data['is_superuser'] = True
+    serializer = UserSerializer(data=data)
     if serializer.is_valid():
-        user = serializer.save(is_staff=True, is_superuser=True)
+        serializer.save()
         return Response({'detail': 'Superuser created successfully'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
