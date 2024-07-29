@@ -1,4 +1,4 @@
 venv/
-reference.txt
-base/db.sqlite3
+# reference.txt
+# base/db.sqlite3
 
