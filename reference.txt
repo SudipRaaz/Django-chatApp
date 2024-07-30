@@ -21,6 +21,9 @@ python manage.py migrate // required to apply changes and db.sqlite will be crea
 
 ## // run project in local host
 python manage.py runserver
+## run project in custom ip and port
+python manage.py runserver 192.168.1.100:8080
+
 
 ## // create a requirement file
 pip freeze > requirement.txt
