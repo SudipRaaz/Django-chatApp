@@ -5,15 +5,19 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
+from rest_framework.exceptions import AuthenticationFailed
+from difflib import get_close_matches
+
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
+# create user
 class UserCreate(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-
-
+# create super user
 @api_view(['POST'])
 def create_superuser(request):
     data = request.data.copy()
@@ -25,18 +29,50 @@ def create_superuser(request):
         return Response({'detail': 'Superuser created successfully'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# login user
+class LoginView(APIView):
+    def post(self, request):
+        """
+        Handles user login.
+
+        Parameters:
+        request (Request): The incoming request containing user credentials.
+
+        Returns:
+        Response: A response object containing the refresh and access tokens, or an error message if the credentials are invalid.
+        """
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        user = User.objects.filter(email=email).first()
+        if user is None:
+            raise AuthenticationFailed("User not found")
+        if not user.check_password(password):
+            raise AuthenticationFailed("Invalid Credentials")
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        response = Response({"refresh": str(refresh), "access": access_token}, status=status.HTTP_200_OK)
+
+        # Set access token in cookie
+        response.set_cookie(
+            key='access_token',
+            value=access_token,
+            httponly=True,  # Make cookie inaccessible for JavaScripts
+            secure=True,  # Ensures cookie is only sent over HTTPS
+            samesite='Lax',  # Helps protect against CSRF
+        )
+        return response
+
+
 class UserProfile(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     # permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, id=None, *args, **kwargs):
-        if id is None:
-            # Retrieve all users
-            queryset = User.objects.all()
-            serializers = UserSerializer(queryset, many=True)
-            return Response(serializers.data, status=status.HTTP_200_OK)
-        else:
+    def get(self, request, id=None, email=None, name=None, *args, **kwargs):
+        if id is not None:
             # Retrieve a specific user by ID
             try:
                 user = User.objects.get(id=id)
@@ -44,6 +80,44 @@ class UserProfile(generics.RetrieveUpdateDestroyAPIView):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response({"error": f"User with ID {id} does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        
+        elif email is not None:
+            # Retrieve a specific user by email
+            try:
+                user = User.objects.get(email=email)
+                serializer = UserSerializer(user)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({"error": f"User with email {email} does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        elif name:
+            # Debugging print statements
+            print(f"Searching for the closest match to the name: {name}")
+            
+            # Find the most similar username
+            usernames = list(User.objects.values_list('name', flat=True)) or []
+            print(f"Usernames retrieved from the database: {usernames}")
+            
+            if usernames:
+                closest_match = get_close_matches(name, usernames, n=1, cutoff=0.6)
+                print(f"Closest match found: {closest_match}")
+                
+                if closest_match:
+                    try:
+                        user = User.objects.get(name=closest_match[0])
+                        serializer = UserSerializer(user)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    except User.DoesNotExist:
+                        return Response({"error": f"No user found for the closest match '{closest_match[0]}'."}, status=status.HTTP_404_NOT_FOUND)
+                else:
+                    return Response({"error": f"No similar username found for '{name}'."}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response({"error": "No users found in the database."}, status=status.HTTP_404_NOT_FOUND)
+        
+        else:
+            # Retrieve all users if no specific filter is provided
+            queryset = User.objects.all()
+            serializers = UserSerializer(queryset, many=True)
+            return Response(serializers.data, status=status.HTTP_200_OK)
 
     def delete(self,request, id, *args, **kwargs):
         try:
