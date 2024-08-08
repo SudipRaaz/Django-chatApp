@@ -99,7 +99,7 @@ class UserProfile(generics.RetrieveUpdateDestroyAPIView):
             
             if usernames:
                 closest_match = get_close_matches(name, usernames, n=1, cutoff=0.6)
-                print(f"Closest match found: {closest_match}")
+                print(f"Closest match found: {closest_match}") 
                 
                 if closest_match:
                     try:
