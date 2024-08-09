@@ -69,7 +69,7 @@ class LoginView(APIView):
 class UserProfile(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, id=None, email=None, name=None, *args, **kwargs):
         if id is not None:

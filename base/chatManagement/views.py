@@ -13,12 +13,22 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Conversation.objects.filter(participants=self.request.user)
 
-    def perform_create(self, serializer):
-        participants_ids = self.request.data.get('participant_ids', [])
-        participants = MyUser.objects.filter(id__in=participants_ids)
-        conversation = serializer.save()
-        conversation.participants.set(participants)
-        conversation.save()
+    def create(self, request, *args, **kwargs):
+        participant_ids = request.data.get('participant_ids', [])
+        if not participant_ids:
+            return Response({"detail": "Participant IDs are required."}, status=400)
+        
+        # Include the current user if not already included
+        if request.user.id not in participant_ids:
+            participant_ids.append(request.user.id)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        conversation = serializer.save(participant_ids=participant_ids)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=201, headers=headers)
+
 
 class MessageListCreateView(generics.ListCreateAPIView):
     serializer_class = MessageSerializer

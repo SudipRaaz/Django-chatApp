@@ -1,6 +1,13 @@
-from django.urls import path
-from . import views
+# urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ConversationViewSet, MessageListCreateView, ConversationMessagesView
+
+router = DefaultRouter()
+router.register(r'conversations', ConversationViewSet, basename='conversation')
 
 urlpatterns = [
-    # path('register/', views.UserCreate.as_view(), name='user-register'),
+    path('', include(router.urls)),
+    path('conversations/<int:conversation_id>/messages/', MessageListCreateView.as_view(), name='message-list-create'),
+    path('conversations/<int:conversation_id>/messages/list/', ConversationMessagesView.as_view(), name='conversation-messages'),
 ]
