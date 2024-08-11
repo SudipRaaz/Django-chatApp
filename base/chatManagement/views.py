@@ -6,6 +6,8 @@ from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from usermanagement.models import MyUser
 
+# The `ConversationViewSet` class defines view methods for handling conversations with participants
+# filtered by the current user.
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated]
@@ -17,7 +19,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
         participant_ids = request.data.get('participant_ids', [])
         if not participant_ids:
             return Response({"detail": "Participant IDs are required."}, status=400)
-        
+        # add a validation to not add active user's participant id
+
         # Include the current user if not already included
         if request.user.id not in participant_ids:
             participant_ids.append(request.user.id)
