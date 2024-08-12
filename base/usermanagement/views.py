@@ -32,15 +32,6 @@ def create_superuser(request):
 # login user
 class LoginView(APIView):
     def post(self, request):
-        """
-        Handles user login.
-
-        Parameters:
-        request (Request): The incoming request containing user credentials.
-
-        Returns:
-        Response: A response object containing the refresh and access tokens, or an error message if the credentials are invalid.
-        """
         email = request.data.get('email')
         password = request.data.get('password')
 
@@ -64,7 +55,6 @@ class LoginView(APIView):
             samesite='Lax',  # Helps protect against CSRF
         )
         return response
-
 
 class UserProfile(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()

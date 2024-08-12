@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
-from usermanagement.models import MyUser
+# from usermanagement.models import MyUser
+from rest_framework.exceptions import PermissionDenied
 
 # The `ConversationViewSet` class defines view methods for handling conversations with participants
 # filtered by the current user.
@@ -45,6 +46,18 @@ class MessageListCreateView(generics.ListCreateAPIView):
         conversation_id = self.kwargs['conversation_id']
         conversation = Conversation.objects.get(id=conversation_id)
         serializer.save(conversation=conversation, sender=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        message_id = self.kwargs['pk']
+        message = Message.objects.get(id=message_id)
+
+        # Check if the authenticated user is the sender of the message
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to delete this message.")
+
+        # Delete the message
+        message.delete()
+        return Response({"status_code":204, "message":"Message deleted successfully"})
 
 class ConversationMessagesView(generics.ListAPIView):
     serializer_class = MessageSerializer
