@@ -1,3 +1,4 @@
+from .models import Media
 from rest_framework import serializers
 from .models import Message, Conversation
 from usermanagement.models import MyUser
@@ -34,3 +35,10 @@ class MessageSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         message = Message.objects.create(**validated_data)
         return message
+
+# media serializers
+class MediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Media
+        fields = ['id', 'file', 'uploaded_at', 'conversation', 'sender']
+        read_only_fields = ['conversation', 'sender']

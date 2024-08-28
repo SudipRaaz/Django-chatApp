@@ -1,4 +1,8 @@
 # models.py
+<<<<<<< HEAD
+=======
+from django.conf import settings
+>>>>>>> workingdir
 from django.db import models
 from usermanagement.models import MyUser
 
@@ -28,3 +32,16 @@ class Participant(models.Model):
 
     def __str__(self):
         return f'{self.user} in conversation {self.conversation.id}'
+<<<<<<< HEAD
+=======
+
+
+class Media(models.Model):
+    file = models.FileField(upload_to='chat_media/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    conversation = models.ForeignKey('Conversation', related_name='media', on_delete=models.CASCADE)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_media', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.file.name} uploaded by {self.sender}'
+>>>>>>> workingdir

@@ -2,10 +2,11 @@
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Conversation, Message
-from .serializers import ConversationSerializer, MessageSerializer
+from .models import Conversation, Message, Media
+from .serializers import ConversationSerializer, MessageSerializer, MediaSerializer
 # from usermanagement.models import MyUser
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # The `ConversationViewSet` class defines view methods for handling conversations with participants
 # filtered by the current user.
@@ -32,7 +33,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=201, headers=headers)
-
 
 class MessageListCreateView(generics.ListCreateAPIView):
     serializer_class = MessageSerializer
@@ -66,3 +66,20 @@ class ConversationMessagesView(generics.ListAPIView):
     def get_queryset(self):
         conversation_id = self.kwargs['conversation_id']
         return Message.objects.filter(conversation_id=conversation_id)
+
+class MediaUploadView(generics.CreateAPIView):
+    serializer_class = MediaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        conversation_id = self.kwargs['conversation_id']
+        conversation = Conversation.objects.get(id=conversation_id)
+        serializer.save(conversation=conversation, sender=self.request.user)
+
+class MediaListView(generics.ListAPIView):
+    serializer_class = MediaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        conversation_id = self.kwargs['conversation_id']
+        return Media.objects.filter(conversation_id=conversation_id)
